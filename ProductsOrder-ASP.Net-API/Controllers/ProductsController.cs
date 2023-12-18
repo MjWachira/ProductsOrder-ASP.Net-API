@@ -21,12 +21,32 @@ namespace ProductsOrder_ASP.Net_API.Controllers
         }
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult<List<Products>>> GetAllProducts() 
+        public async Task<ActionResult<List<Products>>> GetAllProducts(int pageNumber = 1, int pageSize = 10)
         {
-            var products = await _productservice.GetAllProducts();
+            try
+            {
+                // Validate and sanitize page number and page size if needed
+                if (pageNumber < 1)
+                {
+                    pageNumber = 1;
+                }
 
-            return Ok(products);
+                if (pageSize < 1)
+                {
+                    pageSize = 10; // Default page size
+                }
+
+                var products = await _productservice.GetPagedProducts(pageNumber, pageSize);
+
+                return Ok(products);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, "Internal Server Error");
+            }
         }
+
         [HttpPost]
         [Authorize(Policy = "AdminPolicy")]
         public  async Task<ActionResult<string>>AddProduct(AddProductDto Product)
@@ -73,10 +93,31 @@ namespace ProductsOrder_ASP.Net_API.Controllers
 
             return Ok(response);
 
-            
-            
-           
         }
+        [HttpGet("filter")]
+        [Authorize]
+        public async Task<ActionResult<List<Products>>> FilterProducts([FromQuery] string productName, [FromQuery] string? price = null)
+        {
+            try
+            {
+                // Validate and sanitize input parameters if needed
+                if (string.IsNullOrEmpty(productName))
+                {
+                    return BadRequest("Product name is required for filtering.");
+                }
+
+                var filteredProducts = await _productservice.FilterProducts(productName, price);
+
+                return Ok(filteredProducts);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+
 
     }
 }

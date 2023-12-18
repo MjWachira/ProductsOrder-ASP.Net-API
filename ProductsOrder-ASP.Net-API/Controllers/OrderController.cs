@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,15 +27,23 @@ namespace ProductsOrder_ASP.Net_API.Controllers
             _context = dBContext;
         }
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<List<Orders>>> GetAllOrders()
         {
             var orders = await _orderservice.GetAllOrders();
+            var list = User.Claims.ToList();
+            var Id = list[1].Value;
+
+            Console.WriteLine($"User ID: {Id}");
 
             return Ok(orders);
         }
         [HttpPost]
+        [Authorize]
         public async Task<ActionResult<string>> MakeOrder(AddOrderDto Order)
         {
+
+
             var existingProduct = await _productservice.GetOneProduct(Order.ProductId);
 
             if (existingProduct == null)
@@ -66,11 +75,9 @@ namespace ProductsOrder_ASP.Net_API.Controllers
                 return NotFound($"Order with id {id} not found.");
             }
 
-            // Check for concurrency here if needed
-
+          
             // Update existingOrder properties
-            existingOrder.CustomerId = uOrder.CustomerId;
-            existingOrder.CustomerName = uOrder.CustomerName;
+            
             existingOrder.OrderDate = uOrder.OrderDate;
 
             var response = await _orderservice.UpdateOrder(existingOrder);
@@ -89,6 +96,27 @@ namespace ProductsOrder_ASP.Net_API.Controllers
 
             var response = await _orderservice.DeleteOrder(order);
             return Ok(response);
+        }
+        [HttpGet("user/{userId}/with-products")]
+        public async Task<ActionResult<List<UserOrderWithProductsDto>>> GetUserOrdersWithProducts(Guid userId)
+        {
+            try
+            {
+                var userOrders = await _orderservice.GetUserOrdersWithProducts(userId);
+
+                if (userOrders == null || userOrders.Count == 0)
+                {
+                    return NotFound("User has no orders.");
+                }
+
+                var userOrderDtos = _mapper.Map<List<UserOrderWithProductsDto>>(userOrders);
+                return Ok(userOrderDtos);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, "Internal Server Error");
+            }
         }
 
 

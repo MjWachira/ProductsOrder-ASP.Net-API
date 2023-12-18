@@ -48,5 +48,13 @@ namespace ProductsOrder_ASP.Net_API.Services
 
             return "Order Added Successfully";
         }
+        public async Task<List<Orders>> GetUserOrdersWithProducts(Guid userId)
+        {
+            return await _context.Orders
+                .Where(o => o.UserId == userId)
+                .Include(o => o.Products)
+                .ToListAsync();
+        }
+
     }
 }

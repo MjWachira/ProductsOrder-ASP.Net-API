@@ -10,5 +10,6 @@ namespace ProductsOrder_ASP.Net_API.Services.IServices
         Task<string> AddOrder(Orders order);
         Task<string> UpdateOrder(Orders order);
         Task<bool> DeleteOrder(Orders order);
+        Task<List<Orders>> GetUserOrdersWithProducts(Guid userId);
     }
 }
